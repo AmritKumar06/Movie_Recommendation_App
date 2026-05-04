@@ -1,0 +1,32 @@
+# ── Python ─────────────────────────────
+__pycache__/
+*.py[cod]
+*.so
+.env
+*.pkl
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+
+# ── Node / React ────────────────────────
+node_modules/
+frontend/dist/
+frontend/.env.local
+
+# ── IDE ─────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# ── Dataset (large files) ───────────────
+backend/dataset/*.csv
+
+# ── Logs ────────────────────────────────
+*.log
+npm-debug.log*

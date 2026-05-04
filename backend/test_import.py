@@ -1,0 +1,7 @@
+try:
+    from app import app
+    print("Flask app imported successfully!")
+    print("Routes:", [str(rule) for rule in app.url_map.iter_rules()])
+except Exception as e:
+    print(f"Import error: {e}")
+    import traceback; traceback.print_exc()
