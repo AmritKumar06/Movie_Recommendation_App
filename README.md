@@ -11,7 +11,7 @@ Built with a **Flask/Python** machine learning backend and a modern, responsive 
 - **Content-Based AI Recommendations**: Uses genres, cast, keywords, and storylines to find mathematically similar movies.
 - **Lightning Fast Search**: Autocomplete search functionality optimized for speed.
 - **Modern UI/UX**: Dark mode, Netflix-inspired responsive design with smooth Framer Motion animations.
-- **Dynamic Posters**: Integrates with OMDB API to fetch live movie posters.
+- **Dynamic Posters**: Integrates with TVDB API to fetch live movie posters.
 - **Comprehensive Dataset**: Powered by the Kaggle TMDB 5000 Movies Dataset.
 - **Full-Stack Architecture**: Clean separation between ML REST API backend and React frontend.
 
@@ -59,7 +59,7 @@ Built with a **Flask/Python** machine learning backend and a modern, responsive 
 ### Prerequisites
 - Python 3.9+
 - Node.js 18+
-- [OMDB API Key](http://www.omdbapi.com/apikey.aspx) (Free)
+- [TVDB API Key](https://thetvdb.com/api-information) (Free)
 - TMDB 5000 Dataset CSV files (Download from [Kaggle](https://www.kaggle.com/datasets/tmdb/tmdb-movie-metadata) and place inside `backend/dataset/`)
 
 ### 1. Backend Setup (Flask & ML)
@@ -88,7 +88,7 @@ Built with a **Flask/Python** machine learning backend and a modern, responsive 
    *This will create `model.pkl`, `movies.pkl`, and `vectors.pkl`.*
 6. Set up your environment variables:
    - Copy `.env.example` to `.env`.
-   - Add your OMDB API Key: `OMDB_API_KEY=your_key_here`
+   - Add your TVDB API Key: `TVDB_API_KEY=your_key_here`
 7. Start the Flask development server:
    ```bash
    python app.py
@@ -128,7 +128,7 @@ Built with a **Flask/Python** machine learning backend and a modern, responsive 
    ```bash
    gunicorn -w 4 -b 0.0.0.0:$PORT app:app
    ```
-5. Add the `OMDB_API_KEY` to your host's environment variables.
+5. Add the `TVDB_API_KEY` to your host's environment variables.
 
 ### Deploying the Frontend (Vercel / Netlify)
 1. Push your code to GitHub.

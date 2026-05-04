@@ -56,7 +56,7 @@ The backend is a Python application that uses `pandas` for data manipulation, `s
 - `GET /health`: Returns `{ status: "healthy" }` if the API and models are loaded properly.
 - `GET /movies`: Paginated endpoint to fetch the full catalogue of movies.
 - `GET /search?q=...`: Connects to `search_movies()` to provide live autocomplete data.
-- `GET /recommend/<movie_title>`: Connects to `get_recommendations()`. If a `OMDB_API_KEY` is present in your `.env` file, this endpoint also reaches out to the live OMDB API to fetch the official poster image URL for each recommended movie.
+- `GET /recommend/<movie_title>`: Connects to `get_recommendations()`. If a `TVDB_API_KEY` is present in your `.env` file, this endpoint also reaches out to the live TVDB API to fetch the official poster image URL for each recommended movie.
 
 ---
 
@@ -106,6 +106,6 @@ If you type "Inception" into the Discover page and press Enter, here is exactly 
 3. **Frontend API**: `api.js` fires a `GET` request to `/api/recommend/Inception?n=5`. Vite proxies this to `localhost:5000/recommend/Inception?n=5`.
 4. **Backend Router**: `app.py` catches the request in the `@app.route("/recommend/<path:movie_title>")` block.
 5. **Backend Engine**: `recommendation.py` intercepts "Inception". It finds Inception's vector representation in memory, asks the KNN model for the 5 closest vectors, maps those vectors back to movie dictionaries, and returns them.
-6. **Backend Enhancer**: `app.py` takes those 5 movie dictionaries and makes 5 quick external API calls to the OMDB servers to grab the absolute URL of each movie's poster image. It attaches these URLs to the dictionaries and returns JSON to the frontend.
+6. **Backend Enhancer**: `app.py` takes those 5 movie dictionaries and makes 5 quick external API calls to the TVDB servers to grab the absolute URL of each movie's poster image. It attaches these URLs to the dictionaries and returns JSON to the frontend.
 7. **Frontend State**: The `useRecommendations` hook receives the JSON. It sets `loading` to `False` and populates the `recommendations` array.
 8. **Frontend UI**: `RecommendationGrid.jsx` sees `loading` is False and `recommendations` has data. It maps over the array, rendering 5 `MovieCard.jsx` components, which animate onto the screen one by one.

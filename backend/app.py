@@ -34,26 +34,58 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app)  # Allow all origins (flask-cors 6.x compatible)
 
-OMDB_API_KEY  = os.getenv("OMDB_API_KEY", "")
-OMDB_BASE_URL = "http://www.omdbapi.com/"
+TVDB_API_KEY = os.getenv("TVDB_API_KEY", "").strip()
+TVDB_TOKEN = None
 
 
 # ─────────────────────────────────────────────────
 # Helper utilities
 # ─────────────────────────────────────────────────
 
-def _fetch_poster(movie_title: str) -> str | None:
-    """Fetch poster URL from OMDB API for a given movie title."""
-    if not OMDB_API_KEY:
+def _get_tvdb_token():
+    """Authenticate with TVDB to get a bearer token."""
+    global TVDB_TOKEN
+    if not TVDB_API_KEY:
         return None
     try:
-        params = {"t": movie_title, "apikey": OMDB_API_KEY}
-        resp = requests.get(OMDB_BASE_URL, params=params, timeout=5)
+        url = "https://api4.thetvdb.com/v4/login"
+        resp = requests.post(url, json={"apikey": TVDB_API_KEY}, timeout=5)
         if resp.ok:
-            data = resp.json()
-            poster = data.get("Poster")
-            if poster and poster != "N/A":
-                return poster
+            TVDB_TOKEN = resp.json().get("data", {}).get("token")
+    except requests.RequestException:
+        pass
+    return TVDB_TOKEN
+
+
+def _fetch_poster(movie_title: str) -> str | None:
+    """Fetch poster URL from TVDB API for a given movie title."""
+    if not TVDB_API_KEY:
+        return None
+        
+    global TVDB_TOKEN
+    if not TVDB_TOKEN:
+        _get_tvdb_token()
+        
+    if not TVDB_TOKEN:
+        return None
+
+    try:
+        url = "https://api4.thetvdb.com/v4/search"
+        headers = {"Authorization": f"Bearer {TVDB_TOKEN}"}
+        params = {"query": movie_title, "type": "movie"}
+        
+        resp = requests.get(url, params=params, headers=headers, timeout=5)
+        
+        # If token expired, refresh and retry once
+        if resp.status_code == 401:
+            _get_tvdb_token()
+            headers = {"Authorization": f"Bearer {TVDB_TOKEN}"}
+            resp = requests.get(url, params=params, headers=headers, timeout=5)
+            
+        if resp.ok:
+            data = resp.json().get("data", [])
+            if data and len(data) > 0:
+                return data[0].get("image_url")
     except requests.RequestException:
         pass
     return None
@@ -74,7 +106,7 @@ def health():
         "success": True,
         "status":  "healthy",
         "model_loaded": is_ready(),
-        "omdb_api": bool(OMDB_API_KEY),
+        "tvdb_api": bool(TVDB_API_KEY),
     })
 
 
@@ -121,7 +153,7 @@ def search():
 def recommend(movie_title: str):
     """
     Return top-5 movie recommendations for a given title.
-    Optionally fetches OMDB posters when OMDB_API_KEY is set.
+    Optionally fetches TVDB posters when TVDB_API_KEY is set.
     """
     n = min(int(request.args.get("n", 5)), 10)
 
@@ -132,8 +164,8 @@ def recommend(movie_title: str):
     except RuntimeError as exc:
         return _error(str(exc), 503)
 
-    # Enrich with poster URLs if OMDB key is available
-    if OMDB_API_KEY:
+    # Enrich with poster URLs if TVDB key is available
+    if TVDB_API_KEY:
         for movie in recommendations:
             movie["poster_url"] = _fetch_poster(movie["title"])
     else:
