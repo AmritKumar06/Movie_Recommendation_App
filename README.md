@@ -11,7 +11,7 @@ Built with a **Flask/Python** machine learning backend and a modern, responsive 
 - **Content-Based AI Recommendations**: Uses genres, cast, keywords, and storylines to find mathematically similar movies.
 - **Lightning Fast Search**: Autocomplete search functionality optimized for speed.
 - **Modern UI/UX**: Dark mode, Netflix-inspired responsive design with smooth Framer Motion animations.
-- **Dynamic Posters**: Integrates with TVDB API to fetch live movie posters.
+- **Dynamic Posters**: Integrates with TMDB API to fetch live movie posters.
 - **Comprehensive Dataset**: Powered by the Kaggle TMDB 5000 Movies Dataset.
 - **Full-Stack Architecture**: Clean separation between ML REST API backend and React frontend.
 

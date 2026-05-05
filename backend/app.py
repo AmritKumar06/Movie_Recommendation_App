@@ -34,58 +34,26 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app)  # Allow all origins (flask-cors 6.x compatible)
 
-TVDB_API_KEY = os.getenv("TVDB_API_KEY", "").strip()
-TVDB_TOKEN = None
+TMDB_API_KEY  = os.getenv("TMDB_API_KEY", "").strip()
+TMDB_BASE_URL = "https://api.themoviedb.org/3"
+POSTER_BASE   = "https://image.tmdb.org/t/p/w500"
 
 
 # ─────────────────────────────────────────────────
 # Helper utilities
 # ─────────────────────────────────────────────────
 
-def _get_tvdb_token():
-    """Authenticate with TVDB to get a bearer token."""
-    global TVDB_TOKEN
-    if not TVDB_API_KEY:
+def _fetch_poster(movie_id: int) -> str | None:
+    """Fetch poster path from TMDB for a given movie_id."""
+    if not TMDB_API_KEY:
         return None
     try:
-        url = "https://api4.thetvdb.com/v4/login"
-        resp = requests.post(url, json={"apikey": TVDB_API_KEY}, timeout=5)
+        url = f"{TMDB_BASE_URL}/movie/{movie_id}"
+        params = {"api_key": TMDB_API_KEY}
+        resp = requests.get(url, params=params, timeout=5)
         if resp.ok:
-            TVDB_TOKEN = resp.json().get("data", {}).get("token")
-    except requests.RequestException:
-        pass
-    return TVDB_TOKEN
-
-
-def _fetch_poster(movie_title: str) -> str | None:
-    """Fetch poster URL from TVDB API for a given movie title."""
-    if not TVDB_API_KEY:
-        return None
-        
-    global TVDB_TOKEN
-    if not TVDB_TOKEN:
-        _get_tvdb_token()
-        
-    if not TVDB_TOKEN:
-        return None
-
-    try:
-        url = "https://api4.thetvdb.com/v4/search"
-        headers = {"Authorization": f"Bearer {TVDB_TOKEN}"}
-        params = {"query": movie_title, "type": "movie"}
-        
-        resp = requests.get(url, params=params, headers=headers, timeout=5)
-        
-        # If token expired, refresh and retry once
-        if resp.status_code == 401:
-            _get_tvdb_token()
-            headers = {"Authorization": f"Bearer {TVDB_TOKEN}"}
-            resp = requests.get(url, params=params, headers=headers, timeout=5)
-            
-        if resp.ok:
-            data = resp.json().get("data", [])
-            if data and len(data) > 0:
-                return data[0].get("image_url")
+            path = resp.json().get("poster_path")
+            return f"{POSTER_BASE}{path}" if path else None
     except requests.RequestException:
         pass
     return None
@@ -106,7 +74,7 @@ def health():
         "success": True,
         "status":  "healthy",
         "model_loaded": is_ready(),
-        "tvdb_api": bool(TVDB_API_KEY),
+        "tmdb_api": bool(TMDB_API_KEY),
     })
 
 
@@ -153,7 +121,7 @@ def search():
 def recommend(movie_title: str):
     """
     Return top-5 movie recommendations for a given title.
-    Optionally fetches TVDB posters when TVDB_API_KEY is set.
+    Optionally fetches TMDB posters when TMDB_API_KEY is set.
     """
     n = min(int(request.args.get("n", 5)), 10)
 
@@ -164,10 +132,10 @@ def recommend(movie_title: str):
     except RuntimeError as exc:
         return _error(str(exc), 503)
 
-    # Enrich with poster URLs if TVDB key is available
-    if TVDB_API_KEY:
+    # Enrich with poster URLs if TMDB key is available
+    if TMDB_API_KEY:
         for movie in recommendations:
-            movie["poster_url"] = _fetch_poster(movie["title"])
+            movie["poster_url"] = _fetch_poster(movie["id"])
     else:
         for movie in recommendations:
             movie["poster_url"] = None
@@ -180,10 +148,10 @@ def recommend(movie_title: str):
     })
 
 
-@app.route("/poster/<path:movie_title>", methods=["GET"])
-def poster(movie_title: str):
-    """Fetch poster URL for a given movie title."""
-    url = _fetch_poster(movie_title)
+@app.route("/poster/<int:movie_id>", methods=["GET"])
+def poster(movie_id: int):
+    """Fetch poster URL for a given TMDB movie_id."""
+    url = _fetch_poster(movie_id)
     if url:
         return jsonify({"success": True, "poster_url": url})
     return _error("Poster not available.", 404)
@@ -197,5 +165,3 @@ if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))
     debug = os.getenv("FLASK_DEBUG", "true").lower() == "true"
     app.run(host="0.0.0.0", port=port, debug=debug)
-# Trigger reload
-
